@@ -127,7 +127,7 @@ namespace Minikit.AbilitySystem
 
         }
 
-        protected void StartCooldown()
+        protected virtual void StartCooldown()
         {
             if (cooldownEffectTag != null)
             {
