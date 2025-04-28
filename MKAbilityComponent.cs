@@ -12,32 +12,15 @@ namespace Minikit.AbilitySystem
         private Dictionary<MKTag, MKAggregateAttribute> attributesByTag = new();
 
 
-        private void Awake()
+        protected virtual void Awake()
         {
-            AwakeInternal();
         }
 
-        protected virtual void AwakeInternal()
+        protected virtual void Start()
         {
-
         }
 
-        private void Start()
-        {
-            StartInternal();
-        }
-
-        protected virtual void StartInternal()
-        {
-
-        }
-
-        private void Update()
-        {
-            UpdateInternal();
-        }
-
-        protected virtual void UpdateInternal()
+        protected virtual void Update()
         {
             foreach (MKAbility ability in IterateAbilities().ToArray())
             {
