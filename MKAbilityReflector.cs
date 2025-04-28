@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -26,14 +25,13 @@ namespace Minikit.AbilitySystem.Internal
                         if (abilityTypeTag != null)
                         {
                             registeredAbilities.Add(abilityTypeTag, type);
-
-                            continue;
                         }
                         else
                         {
-                            Debug.LogError($"Failed to register {typeof(MKAbility).Name} because field {MKAbility.__typeTagFieldName} wasn't overridden");
-                            continue;
+                            Debug.LogError($"Failed to register {nameof(MKAbility)} because field {MKAbility.__typeTagFieldName} wasn't overridden");
                         }
+                        
+                        continue;
                     }
 
                     if (type.IsSubclassOf(typeof(MKEffect))
@@ -44,14 +42,13 @@ namespace Minikit.AbilitySystem.Internal
                         if (abilityTypeTag != null)
                         {
                             registeredEffects.Add(abilityTypeTag, type);
-
-                            continue;
                         }
                         else
                         {
-                            Debug.LogError($"Failed to register {typeof(MKEffect).Name} because field {MKEffect.__typeTagFieldName} wasn't overridden");
-                            continue;
+                            Debug.LogError($"Failed to register {nameof(MKEffect)} because field {MKEffect.__typeTagFieldName} wasn't overridden");
                         }
+                        
+                        continue;
                     }
                 }
             }
@@ -60,23 +57,23 @@ namespace Minikit.AbilitySystem.Internal
 
         public static Type GetRegisteredAbilityType(MKTag _tag)
         {
-            if (registeredAbilities.ContainsKey(_tag))
+            if (registeredAbilities.TryGetValue(_tag, out Type abilityType))
             {
-                return registeredAbilities[_tag];
+                return abilityType;
             }
 
-            Debug.LogError($"Failed to get registered {typeof(MKAbility).Name} type from tag {_tag.key}");
+            Debug.LogError($"Failed to get registered {nameof(MKAbility)} type from tag {_tag.key}");
             return null;
         }
 
         public static Type GetRegisteredEffectType(MKTag _tag)
         {
-            if (registeredEffects.ContainsKey(_tag))
+            if (registeredEffects.TryGetValue(_tag, out Type effectType))
             {
-                return registeredEffects[_tag];
+                return effectType;
             }
 
-            Debug.LogError($"Failed to get registered {typeof(MKEffect).Name} type from tag {_tag.key}");
+            Debug.LogError($"Failed to get registered {nameof(MKEffect)} type from tag {_tag.key}");
             return null;
         }
     }

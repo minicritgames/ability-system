@@ -1,11 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace Minikit.AbilitySystem
 {
-    /// <summary> Fixed attributes cannot undo any modifiers that are applied. Best use cases for fixed attributes are values that have their base changed often </summary>
+    /// <summary> Fixed attributes cannot undo any modifiers that are applied. Best use cases for fixed attributes
+    /// are values that have their base changed often. </summary>
     public class MKFixedAttribute
     {
         public UnityEvent<float, float> OnValueChanged = new();
@@ -38,7 +37,7 @@ namespace Minikit.AbilitySystem
             OnValueChanged.Invoke(oldValue, value);
         }
 
-        /// <summary> Applies a modifier a single time. This cannot be undone or removed, it permanently alters the value of this attribute </summary>
+        /// <summary> Applies a modifier a single time. This cannot be undone or removed, it permanently alters the value of this attribute. </summary>
         public bool BakeModifier(MKModifier _modifier)
         {
             float oldValue = value;

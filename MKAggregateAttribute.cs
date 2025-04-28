@@ -1,11 +1,10 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.Events;
 
 namespace Minikit.AbilitySystem
 {
-    /// <summary> Aggregate attributes can add and remove modifiers as desired. Best use cases for aggregate attributes are values that don't change their base, but will be modifier and unmodifier often </summary>
+    /// <summary> Aggregate attributes can add and remove modifiers as desired. Best use cases for aggregate attributes
+    /// are values that don't change their base, but will be modified and unmodified often. </summary>
     public class MKAggregateAttribute
     {
         public UnityEvent<float, float> OnBaseValueChanged = new();
@@ -41,13 +40,12 @@ namespace Minikit.AbilitySystem
 
         public bool ApplyModifier(MKModifier _modifier)
         {
-            if (modifiers.ContainsKey(_modifier.tag))
+            if (!modifiers.TryAdd(_modifier.tag, _modifier))
             {
                 // This modifier has already been applied
                 return false;
             }
 
-            modifiers.Add(_modifier.tag, _modifier);
             UpdateCurrentValue();
 
             return true;

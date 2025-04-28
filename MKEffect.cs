@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Minikit.AbilitySystem.Internal;
@@ -9,30 +8,26 @@ namespace Minikit.AbilitySystem
     public abstract class MKEffect
     {
         // ----- INTERNAL -----
-        // --------------------
-        public static string __typeTagFieldName = "__typeTag"; // NOTE: Internal, do not edit
-        public static MKTag __typeTag = null; // Override in child classes with the new keyword
-        // ------------------------
+        /// <summary> NOTE: Internal, do not edit. </summary>
+        public static string __typeTagFieldName = "__typeTag";
+        /// <summary> Override in child classes with the new keyword. </summary>
+        public static MKTag __typeTag = null;
         // ----- END INTERNAL -----
 
         // ----- SETTINGS -----
-        // --------------------
-        /// <summary> A unique tag for this ability's class type </summary>
+        /// <summary> A unique tag for this ability's class type. </summary>
         public MKTag typeTag { get; private set; } = null;
-        /// <summary> Tags that are granted to the owning MASComponent while this effect is applied </summary>
+        /// <summary> Tags that are granted to the owning MASComponent while this effect is applied. </summary>
         public List<MKTag> grantedTags { get; } = new();
         public int maxStacks { get; protected set; } = 1; // -1 for infinite
         protected float duration = 0f;
-        // ------------------------
         // ----- END SETTINGS -----
 
         // ----- INSTANCE -----
-        // --------------------
         public int stacks { get; private set; } = 0;
 
         protected MKAbilityComponent abilityComponent;
         protected float timeOfApplied = 0f;
-        // ------------------------
         // ----- END INSTANCE -----
 
 
@@ -40,11 +35,11 @@ namespace Minikit.AbilitySystem
         {
             typeTag = _typeTag;
         }
+        
+        
         public void PostConstruct()
         {
-
         }
-
 
         public void Added(MKAbilityComponent _abilityComponent)
         {
@@ -56,7 +51,6 @@ namespace Minikit.AbilitySystem
 
         protected virtual void OnAdded()
         {
-
         }
 
         public void Tick(float _deltaTime)
@@ -71,17 +65,14 @@ namespace Minikit.AbilitySystem
 
         protected virtual void OnActiveTick(float _deltaTime)
         {
-
         }
 
         public void Removed()
         {
-
         }
 
         protected virtual void OnRemoved()
         {
-
         }
 
         public virtual int AddStacks(int _stacks)
@@ -126,21 +117,20 @@ namespace Minikit.AbilitySystem
             Type effectType = MKAbilityReflector.GetRegisteredEffectType(_typeTag);
             if (effectType != null)
             {
-                MKEffect effectInstance = Activator.CreateInstance(effectType, _typeTag) as MKEffect;
-                if (effectInstance != null)
+                if (Activator.CreateInstance(effectType, _typeTag) is MKEffect effectInstance)
                 {
                     effectInstance.PostConstruct();
                     return effectInstance;
                 }
                 else
                 {
-                    Debug.LogError($"Failed to create instance of {typeof(MKEffect).Name} because created instance was null");
+                    Debug.LogError($"Failed to create instance of {nameof(MKEffect)} because created instance was null");
                     return null;
                 }
             }
             else
             {
-                Debug.LogError($"Failed to create instance of {typeof(MKEffect).Name} because type was null");
+                Debug.LogError($"Failed to create instance of {nameof(MKEffect)} because type was null");
                 return null;
             }
         }

@@ -1,8 +1,6 @@
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Minikit.AbilitySystem.Internal;
 
 namespace Minikit.AbilitySystem
 {
@@ -55,13 +53,7 @@ namespace Minikit.AbilitySystem
 
         public bool AddAttribute(MKAggregateAttribute _attribute)
         {
-            if (!attributesByTag.ContainsKey(_attribute.tag))
-            {
-                attributesByTag.Add(_attribute.tag, _attribute);
-                return true;
-            }
-
-            return false;
+            return attributesByTag.TryAdd(_attribute.tag, _attribute);
         }
 
         public bool RemoveAttribute(MKTag _tag)
@@ -77,12 +69,7 @@ namespace Minikit.AbilitySystem
 
         public MKAggregateAttribute GetAttribute(MKTag _tag)
         {
-            if (attributesByTag.ContainsKey(_tag))
-            {
-                return attributesByTag[_tag];
-            }
-
-            return null;
+            return attributesByTag.GetValueOrDefault(_tag);
         }
 
         public bool AddEffectStacks(MKTag _effectTag, int _stacks = 1)
@@ -140,7 +127,6 @@ namespace Minikit.AbilitySystem
 
         protected virtual void OnAddedAbility(MKAbility _ability)
         {
-
         }
 
         public bool RemoveAbility(MKTag _tag)
@@ -190,15 +176,14 @@ namespace Minikit.AbilitySystem
 
         protected virtual void OnRemovedAbility(MKAbility _ability)
         {
-
         }
 
         public bool RemoveAbilities(List<MKTag> _tagList)
         {
             int numberRemoved = 0;
-            foreach (MKTag tag in _tagList)
+            foreach (MKTag tagInList in _tagList)
             {
-                if (RemoveAbility(tag))
+                if (RemoveAbility(tagInList))
                 {
                     numberRemoved++;
                 }
@@ -298,9 +283,9 @@ namespace Minikit.AbilitySystem
         public bool CancelAbilities(List<MKTag> _tagList)
         {
             int numberCancelled = 0;
-            foreach (MKTag tag in _tagList)
+            foreach (MKTag tagInList in _tagList)
             {
-                if (CancelAbility(tag))
+                if (CancelAbility(tagInList))
                 {
                     numberCancelled++;
                 }
@@ -358,7 +343,8 @@ namespace Minikit.AbilitySystem
             foreach (MKAbility ability in IterateAbilities())
             {
                 if (ability.active
-                    && _tagList != null ? _tagList.Contains(ability.typeTag) : false) // If we don't supply a valid tag list, fail the check
+                    && _tagList != null // If we don't supply a valid tag list, fail the check
+                    && _tagList.Contains(ability.typeTag))
                 {
                     tagList.Add(ability.typeTag);
                 }
@@ -407,9 +393,9 @@ namespace Minikit.AbilitySystem
 
         public bool HasGrantedTag(MKTag _tag)
         {
-            foreach (MKTag tag in GetGrantedTags())
+            foreach (MKTag grantedTag in GetGrantedTags())
             {
-                if (tag == _tag)
+                if (grantedTag == _tag)
                 {
                     return true;
                 }
@@ -420,9 +406,9 @@ namespace Minikit.AbilitySystem
 
         public bool HasAnyGrantedTags(List<MKTag> _tagList)
         {
-            foreach (MKTag tag in GetGrantedTags())
+            foreach (MKTag grantedTag in GetGrantedTags())
             {
-                if (_tagList.Contains(tag))
+                if (_tagList.Contains(grantedTag))
                 {
                     return true;
                 }
@@ -433,9 +419,9 @@ namespace Minikit.AbilitySystem
 
         public bool HasAllGrantedTags(List<MKTag> _tagList)
         {
-            foreach (MKTag tag in GetGrantedTags())
+            foreach (MKTag grantedTag in GetGrantedTags())
             {
-                if (!_tagList.Contains(tag))
+                if (!_tagList.Contains(grantedTag))
                 {
                     return false;
                 }
