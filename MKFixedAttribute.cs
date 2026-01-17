@@ -25,7 +25,10 @@ namespace Minikit.AbilitySystem
         {
             float oldValue = value;
             value = Mathf.Clamp(value + _delta, _clampMin, _clampMax);
-            OnValueChanged.Invoke(oldValue, value);
+            if (value != oldValue)
+            {
+                OnValueChanged.Invoke(oldValue, value);
+            }
 
             return value;
         }
