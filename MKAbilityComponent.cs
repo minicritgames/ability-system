@@ -338,6 +338,11 @@ namespace Minikit.AbilitySystem
 
         public void AddGrantedLooseTag(MKTag _tag)
         {
+            if (looseGrantedTags.Contains(_tag))
+            {
+                return;
+            }
+            
             looseGrantedTags.Add(_tag);
 
             foreach (MKAbility ability in IterateAbilities())
