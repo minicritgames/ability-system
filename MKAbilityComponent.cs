@@ -336,6 +336,14 @@ namespace Minikit.AbilitySystem
             return tagList;
         }
 
+        public void AddGrantedLooseTags(List<MKTag> _tags)
+        {
+            foreach (MKTag itTag in _tags)
+            {
+                AddGrantedLooseTag(itTag);
+            }
+        }
+        
         public void AddGrantedLooseTag(MKTag _tag)
         {
             if (looseGrantedTags.Contains(_tag))
@@ -355,6 +363,14 @@ namespace Minikit.AbilitySystem
             }
         }
 
+        public void RemoveGrantedLooseTags(List<MKTag> _tags)
+        {
+            foreach (MKTag itTag in _tags)
+            {
+                RemoveGrantedLooseTag(itTag);
+            }
+        }
+        
         public void RemoveGrantedLooseTag(MKTag _tag)
         {
             looseGrantedTags.Remove(_tag);
