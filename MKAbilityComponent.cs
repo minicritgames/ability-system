@@ -55,7 +55,7 @@ namespace Minikit.AbilitySystem
             return attributesByTag.GetValueOrDefault(_tag);
         }
 
-        public bool AddEffectStacks(MKTag _effectTag, int _stacks = 1)
+        public bool AddEffectStacks(MKTag _effectTag, int _stacks)
         {
             if (_stacks <= 0)
             {
@@ -75,7 +75,11 @@ namespace Minikit.AbilitySystem
 
         public bool AddEffect(MKEffect _effect, int _stacks = 1)
         {
-            effectsByTag.Add(_effect.typeTag, _effect);
+            if (!effectsByTag.TryAdd(_effect.typeTag, _effect))
+            {
+                return false;
+            }
+
             effectsByTag[_effect.typeTag].Added(this);
             effectsByTag[_effect.typeTag].AddStacks(_stacks);
 
