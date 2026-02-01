@@ -18,13 +18,13 @@ namespace Minikit.AbilitySystem
         // ----- SETTINGS -----
         /// <summary> A unique tag for this ability's class type. </summary>
         public MKTag typeTag { get; private set; } = null;
-        /// <summary> Tags that are granted to the owning MASComponent while this ability is active. </summary>
+        /// <summary> Tags that are granted to the owning MKAbilityComponent while this ability is active. </summary>
         public List<MKTag> grantedTags { get; } = new();
-        /// <summary> This ability cannot be activated if the owning MASComponent has any of these tags. </summary>
+        /// <summary> This ability cannot be activated if the owning MKAbilityComponent has any of these tags. </summary>
         public List<MKTag> blockedByTags { get; } = new();
-        /// <summary> When this ability is activated successfully, any active abilities on the owning MASComponent that matches one of these tags will be cancelled. </summary>
+        /// <summary> When this ability is activated successfully, any active abilities on the owning MKAbilityComponent that matches one of these tags will be cancelled. </summary>
         public List<MKTag> cancelAbilityTags { get; } = new();
-        /// <summary> Tags that, when granted to the owning MASComponent, will cancel this ability (only includes grantedLooseTags). </summary>
+        /// <summary> Tags that, when granted to the owning MKAbilityComponent, will cancel this ability (only includes grantedLooseTags). </summary>
         public List<MKTag> cancelledByGrantedLooseTags { get; } = new();
         /// <summary> The tag for the effect used to track this ability's cooldown. </summary>
         public MKTag cooldownEffectTag { get; protected set; } = null;
@@ -65,7 +65,7 @@ namespace Minikit.AbilitySystem
 
         public virtual bool CanActivate()
         {
-            if (abilityComponent == null)
+            if (!abilityComponent)
             {
                 return false;
             }

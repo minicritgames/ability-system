@@ -17,7 +17,7 @@ namespace Minikit.AbilitySystem
         // ----- SETTINGS -----
         /// <summary> A unique tag for this ability's class type. </summary>
         public MKTag typeTag { get; private set; } = null;
-        /// <summary> Tags that are granted to the owning MASComponent while this effect is applied. </summary>
+        /// <summary> Tags that are granted to the owning MKAbilityComponent while this effect is applied. </summary>
         public List<MKTag> grantedTags { get; } = new();
         public int maxStacks { get; protected set; } = 1; // -1 for infinite
         protected float duration = 0f;
