@@ -51,7 +51,7 @@ namespace Minikit.AbilitySystem
             }
         }
 
-        public void Tick(float _deltaTime)
+        public virtual void Tick(float _deltaTime)
         {
             if (active)
             {
