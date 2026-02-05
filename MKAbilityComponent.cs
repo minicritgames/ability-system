@@ -9,7 +9,8 @@ namespace Minikit.AbilitySystem
         private List<MKTag> looseGrantedTags = new();
         private List<MKAbility> grantedAbilities = new();
         private Dictionary<MKTag, MKEffect> effectsByTag = new();
-        private Dictionary<MKTag, MKAggregateAttribute> attributesByTag = new();
+        private Dictionary<MKTag, MKAggregateAttribute> aggregateAttributesByTag = new();
+        private Dictionary<MKTag, MKFixedAttribute> fixedAttributesByTag = new();
 
 
         protected virtual void Awake()
@@ -34,25 +35,39 @@ namespace Minikit.AbilitySystem
         }
 
 
-        public bool AddAttribute(MKAggregateAttribute _attribute)
+        public bool AddAttribute(MKAggregateAttribute _aggregateAttribute)
         {
-            return attributesByTag.TryAdd(_attribute.tag, _attribute);
+            return aggregateAttributesByTag.TryAdd(_aggregateAttribute.tag, _aggregateAttribute);
+        }
+
+        public bool AddAttribute(MKFixedAttribute _fixedAttribute)
+        {
+            return fixedAttributesByTag.TryAdd(_fixedAttribute.tag, _fixedAttribute);
         }
 
         public bool RemoveAttribute(MKTag _tag)
         {
-            if (attributesByTag.ContainsKey(_tag))
+            if (aggregateAttributesByTag.Remove(_tag))
             {
-                attributesByTag.Remove(_tag);
+                return true;
+            }
+            
+            if (fixedAttributesByTag.Remove(_tag))
+            {
                 return true;
             }
 
             return false;
         }
 
-        public MKAggregateAttribute GetAttribute(MKTag _tag)
+        public MKAggregateAttribute GetAggregateAttribute(MKTag _tag)
         {
-            return attributesByTag.GetValueOrDefault(_tag);
+            return aggregateAttributesByTag.GetValueOrDefault(_tag);
+        }
+
+        public MKFixedAttribute GetFixedAttribute(MKTag _tag)
+        {
+            return fixedAttributesByTag.GetValueOrDefault(_tag);
         }
 
         public bool AddEffectStacks(MKTag _effectTag, int _stacks)
