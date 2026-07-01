@@ -88,14 +88,14 @@ namespace Minikit.AbilitySystem
             return false;
         }
 
-        public bool AddEffect(MKEffect _effect, int _stacks = 1)
+        public bool AddEffect(MKEffect _effect, int _stacks = 1, MKEffectContext _context = null)
         {
             if (!effectsByTag.TryAdd(_effect.typeTag, _effect))
             {
                 return false;
             }
 
-            effectsByTag[_effect.typeTag].Added(this);
+            effectsByTag[_effect.typeTag].Added(this, _context);
             effectsByTag[_effect.typeTag].AddStacks(_stacks);
 
             return true;
