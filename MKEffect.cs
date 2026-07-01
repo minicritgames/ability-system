@@ -25,6 +25,7 @@ namespace Minikit.AbilitySystem
 
         // ----- INSTANCE -----
         public int stacks { get; private set; } = 0;
+        public MKEffectContext context { get; private set; } = null;
 
         protected MKAbilityComponent abilityComponent;
         protected float timeOfApplied = 0f;
@@ -41,9 +42,10 @@ namespace Minikit.AbilitySystem
         {
         }
 
-        public void Added(MKAbilityComponent _abilityComponent)
+        public void Added(MKAbilityComponent _abilityComponent, MKEffectContext _context = null)
         {
             abilityComponent = _abilityComponent;
+            context = _context;
             timeOfApplied = Time.time;
 
             OnAdded();
