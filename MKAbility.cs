@@ -39,6 +39,7 @@ namespace Minikit.AbilitySystem
         public int currentCharges { get; private set; } = 1;
         public UnityEvent<int, int> OnChargesChanged = new();
         protected object[] activationParams;
+        private bool rechargeRunning = false;
         // ----- END INSTANCE -----
 
 
@@ -52,8 +53,7 @@ namespace Minikit.AbilitySystem
         {
             currentCharges = maxCharges;
 
-            if (cooldownEffectTag != null
-                && maxCharges <= 1)
+            if (cooldownEffectTag != null)
             {
                 blockedByTags.Add(cooldownEffectTag);
             }
@@ -66,25 +66,49 @@ namespace Minikit.AbilitySystem
                 OnActiveTick(_deltaTime);
             }
 
-            if (maxCharges > 1
-                && currentCharges < maxCharges
-                && rechargeEffectTag != null
-                && abilityComponent
-                && abilityComponent.GetEffect(rechargeEffectTag) == null)
+            TickRecharge();
+        }
+
+        private void TickRecharge()
+        {
+            if (maxCharges <= 1
+                || rechargeEffectTag == null
+                || !abilityComponent)
             {
-                bool wasDepleted = currentCharges == 0;
+                return;
+            }
+
+            bool onCooldown = cooldownEffectTag != null
+                && abilityComponent.GetEffect(cooldownEffectTag) != null;
+            bool eligible = !onCooldown
+                && currentCharges < maxCharges;
+
+            if (!eligible)
+            {
+                if (abilityComponent.GetEffect(rechargeEffectTag) != null)
+                {
+                    abilityComponent.RemoveEffect(rechargeEffectTag);
+                }
+                rechargeRunning = false;
+                return;
+            }
+
+            if (abilityComponent.GetEffect(rechargeEffectTag) != null)
+            {
+                rechargeRunning = true;
+                return;
+            }
+
+            if (rechargeRunning)
+            {
                 SetCurrentCharges(currentCharges + 1);
+                rechargeRunning = false;
+            }
 
-                if (wasDepleted
-                    && cooldownEffectTag != null)
-                {
-                    abilityComponent.RemoveGrantedLooseTag(cooldownEffectTag);
-                }
-
-                if (currentCharges < maxCharges)
-                {
-                    StartRecharge();
-                }
+            if (currentCharges < maxCharges)
+            {
+                StartRecharge();
+                rechargeRunning = true;
             }
         }
 
@@ -117,24 +141,6 @@ namespace Minikit.AbilitySystem
             activationParams = _params;
 
             active = true;
-
-            if (maxCharges > 1)
-            {
-                SetCurrentCharges(currentCharges - 1);
-
-                if (currentCharges == 0
-                    && cooldownEffectTag != null)
-                {
-                    abilityComponent.AddGrantedLooseTag(cooldownEffectTag);
-                }
-
-                if (currentCharges < maxCharges
-                    && rechargeEffectTag != null
-                    && abilityComponent.GetEffect(rechargeEffectTag) == null)
-                {
-                    StartRecharge();
-                }
-            }
 
             List<MKTag> cancelledAbilities = abilityComponent.GetAllActiveAbilitiesWithTags(cancelAbilityTags);
             if (cancelledAbilities.Count > 0)
@@ -180,9 +186,17 @@ namespace Minikit.AbilitySystem
 
         protected virtual void StartCooldown()
         {
-            if (cooldownEffectTag != null)
+            if (cooldownEffectTag == null)
             {
-                AddTrackedEffect(cooldownEffectTag);
+                return;
+            }
+
+            AddTrackedEffect(cooldownEffectTag);
+
+            if (rechargeEffectTag != null)
+            {
+                abilityComponent.RemoveEffect(rechargeEffectTag);
+                rechargeRunning = false;
             }
         }
 
@@ -191,6 +205,14 @@ namespace Minikit.AbilitySystem
             if (rechargeEffectTag != null)
             {
                 AddTrackedEffect(rechargeEffectTag);
+            }
+        }
+
+        protected void SpendCharge()
+        {
+            if (maxCharges > 1)
+            {
+                SetCurrentCharges(currentCharges - 1);
             }
         }
 
