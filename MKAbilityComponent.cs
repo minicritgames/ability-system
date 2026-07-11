@@ -114,6 +114,11 @@ namespace Minikit.AbilitySystem
             return false;
         }
 
+        public MKEffect GetEffect(MKTag _tag)
+        {
+            return effectsByTag.GetValueOrDefault(_tag);
+        }
+
         public bool AddAbility(MKAbility _ability)
         {
             if (HasAbility(_ability))
@@ -323,6 +328,11 @@ namespace Minikit.AbilitySystem
         public bool HasAbility(MKAbility _ability)
         {
             return grantedAbilities.Contains(_ability);
+        }
+
+        public MKAbility GetAbility(MKTag _tag)
+        {
+            return grantedAbilities.FirstOrDefault(a => a.typeTag == _tag);
         }
 
         public List<MKTag> GetAllActiveAbilities()
