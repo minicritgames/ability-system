@@ -38,6 +38,7 @@ namespace Minikit.AbilitySystem
         public bool active { get; private set; } = false;
         public int currentCharges { get; private set; } = 1;
         public UnityEvent<int, int> OnChargesChanged = new();
+        public UnityEvent<bool> OnActiveChanged = new();
         protected object[] activationParams;
         private bool rechargeRunning = false;
         // ----- END INSTANCE -----
@@ -149,6 +150,8 @@ namespace Minikit.AbilitySystem
             }
 
             OnActivate();
+
+            OnActiveChanged.Invoke(true);
         }
 
         protected virtual void OnActivate()
@@ -162,6 +165,8 @@ namespace Minikit.AbilitySystem
                 active = false;
 
                 OnEnd(false);
+
+                OnActiveChanged.Invoke(false);
             }
         }
 
@@ -172,6 +177,8 @@ namespace Minikit.AbilitySystem
                 active = false;
 
                 OnEnd(true);
+
+                OnActiveChanged.Invoke(false);
             }
         }
 
