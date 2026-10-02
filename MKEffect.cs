@@ -113,6 +113,11 @@ namespace Minikit.AbilitySystem
             return GetDuration() - (Time.time - timeOfApplied);
         }
 
+        public void SetDurationRemaining(float _remaining)
+        {
+            timeOfApplied = Time.time - (GetDuration() - _remaining);
+        }
+
 
         public static MKEffect Create(MKTag _typeTag)
         {

@@ -23,6 +23,8 @@ namespace Minikit.AbilitySystem
         public List<MKTag> grantedTags { get; } = new();
         /// <summary> This ability cannot be activated if the owning MKAbilityComponent has any of these tags. </summary>
         public List<MKTag> blockedByTags { get; } = new();
+        /// <summary> This ability cannot be activated unless the owning MKAbilityComponent has all of these tags. </summary>
+        public List<MKTag> requiredTags { get; } = new();
         /// <summary> When this ability is activated successfully, any active abilities on the owning MKAbilityComponent that matches one of these tags will be cancelled. </summary>
         public List<MKTag> cancelAbilityTags { get; } = new();
         /// <summary> Tags that, when granted to the owning MKAbilityComponent, will cancel this ability (only includes grantedLooseTags). </summary>
@@ -129,6 +131,11 @@ namespace Minikit.AbilitySystem
                 return false;
             }
 
+            if (!abilityComponent.HasAllGrantedTags(requiredTags))
+            {
+                return false;
+            }
+
             if (currentCharges <= 0)
             {
                 return false;
@@ -220,6 +227,41 @@ namespace Minikit.AbilitySystem
             if (maxCharges > 1)
             {
                 SetCurrentCharges(currentCharges - 1);
+            }
+        }
+
+        public void CopyTimingFrom(MKAbility _source)
+        {
+            if (!abilityComponent
+                || _source == null
+                || !_source.abilityComponent)
+            {
+                return;
+            }
+
+            SetCurrentCharges(_source.currentCharges);
+            CopyEffectTime(_source, cooldownEffectTag);
+            CopyEffectTime(_source, rechargeEffectTag);
+
+            // A stale flag would make the next recharge tick read the missing effect as a finished cycle and grant a charge
+            rechargeRunning = rechargeEffectTag != null
+                && abilityComponent.GetEffect(rechargeEffectTag) != null;
+        }
+
+        private void CopyEffectTime(MKAbility _source, MKTag _effectTag)
+        {
+            if (_effectTag == null)
+            {
+                return;
+            }
+
+            abilityComponent.RemoveEffect(_effectTag);
+
+            if (_source.abilityComponent.GetEffect(_effectTag) is MKEffect sourceEffect
+                && sourceEffect.GetDurationRemaining() > 0f)
+            {
+                AddTrackedEffect(_effectTag);
+                abilityComponent.GetEffect(_effectTag)?.SetDurationRemaining(sourceEffect.GetDurationRemaining());
             }
         }
 

@@ -452,9 +452,9 @@ namespace Minikit.AbilitySystem
 
         public bool HasAllGrantedTags(List<MKTag> _tagList)
         {
-            foreach (MKTag grantedTag in GetGrantedTags())
+            foreach (MKTag tag in _tagList)
             {
-                if (!_tagList.Contains(grantedTag))
+                if (!HasGrantedTag(tag))
                 {
                     return false;
                 }
