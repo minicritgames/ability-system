@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Minikit.AbilitySystem.Internal
@@ -13,7 +14,7 @@ namespace Minikit.AbilitySystem.Internal
 
         static MKAbilityReflector()
         {
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (Assembly assembly in MKReflection.GetAssembliesDependingOn(typeof(MKAbility).Assembly))
             {
                 foreach (Type type in assembly.GetTypes())
                 {
@@ -54,6 +55,12 @@ namespace Minikit.AbilitySystem.Internal
             }
         }
 
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        public static void Initialize()
+        {
+            RuntimeHelpers.RunClassConstructor(typeof(MKAbilityReflector).TypeHandle);
+        }
 
         public static Type GetRegisteredAbilityType(MKTag _tag)
         {
