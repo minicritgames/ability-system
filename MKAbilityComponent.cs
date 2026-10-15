@@ -6,7 +6,9 @@ namespace Minikit.AbilitySystem
 {
     public class MKAbilityComponent : MonoBehaviour 
     {
-        private List<MKTag> looseGrantedTags = new();
+        /// <summary> Every tag currently granted by loose grants, active abilities and applied effects, reference counted per source </summary>
+        public MKTagCountContainer grantedTags { get; } = new();
+
         private List<MKAbility> grantedAbilities = new();
         private Dictionary<MKTag, MKEffect> effectsByTag = new();
         private Dictionary<MKTag, MKAggregateAttribute> aggregateAttributesByTag = new();
@@ -96,6 +98,7 @@ namespace Minikit.AbilitySystem
             }
 
             effectsByTag[_effect.typeTag].Added(this, _context);
+            grantedTags.AddTags(_effect.grantedTags);
             effectsByTag[_effect.typeTag].AddStacks(_stacks);
 
             return true;
@@ -107,6 +110,7 @@ namespace Minikit.AbilitySystem
             {
                 MKEffect effect = effectsByTag[_tag];
                 effectsByTag.Remove(_tag);
+                grantedTags.RemoveTags(effect.grantedTags);
                 effect.Removed();
                 return true;
             }
@@ -185,7 +189,7 @@ namespace Minikit.AbilitySystem
         {
         }
 
-        public bool RemoveAbilities(List<MKTag> _tagList)
+        public bool RemoveAbilities(IEnumerable<MKTag> _tagList)
         {
             int numberRemoved = 0;
             foreach (MKTag tagInList in _tagList)
@@ -287,7 +291,7 @@ namespace Minikit.AbilitySystem
             return false;
         }
 
-        public bool CancelAbilities(List<MKTag> _tagList)
+        public bool CancelAbilities(IEnumerable<MKTag> _tagList)
         {
             int numberCancelled = 0;
             foreach (MKTag tagInList in _tagList)
@@ -349,118 +353,81 @@ namespace Minikit.AbilitySystem
             return tagList;
         }
 
-        public List<MKTag> GetAllActiveAbilitiesWithTags(List<MKTag> _tagList = null)
+        /// <summary> Active abilities whose type tag matches (hierarchically) any of <paramref name="_tags"/>. Empty when <paramref name="_tags"/> is null. </summary>
+        public List<MKAbility> GetAllActiveAbilitiesWithTags(IEnumerable<MKTag> _tags)
         {
-            List<MKTag> tagList = new();
+            List<MKAbility> abilities = new();
+            if (_tags == null)
+            {
+                return abilities;
+            }
+
             foreach (MKAbility ability in IterateAbilities())
             {
                 if (ability.active
-                    && _tagList != null // If we don't supply a valid tag list, fail the check
-                    && _tagList.Contains(ability.typeTag))
+                    && ability.typeTag.MatchesAny(_tags))
                 {
-                    tagList.Add(ability.typeTag);
+                    abilities.Add(ability);
                 }
             }
 
-            return tagList;
+            return abilities;
         }
 
-        public void AddGrantedLooseTags(List<MKTag> _tags)
+        public void AddGrantedLooseTags(IEnumerable<MKTag> _tags)
         {
-            foreach (MKTag itTag in _tags)
+            foreach (MKTag tag in _tags)
             {
-                AddGrantedLooseTag(itTag);
+                AddGrantedLooseTag(tag);
             }
         }
-        
+
+        /// <summary> Loose grants are counted: each call needs a matching <see cref="RemoveGrantedLooseTag"/> </summary>
         public void AddGrantedLooseTag(MKTag _tag)
         {
-            if (looseGrantedTags.Contains(_tag))
-            {
-                return;
-            }
-            
-            looseGrantedTags.Add(_tag);
+            grantedTags.AddTag(_tag);
 
-            foreach (MKAbility ability in IterateAbilities())
+            foreach (MKAbility ability in IterateAbilities().ToArray())
             {
                 if (ability.active
-                    && ability.cancelledByGrantedLooseTags.Contains(_tag))
+                    && _tag.MatchesAny(ability.cancelledByGrantedLooseTags))
                 {
                     ability.Cancel();
                 }
             }
         }
 
-        public void RemoveGrantedLooseTags(List<MKTag> _tags)
+        public void RemoveGrantedLooseTags(IEnumerable<MKTag> _tags)
         {
-            foreach (MKTag itTag in _tags)
+            foreach (MKTag tag in _tags)
             {
-                RemoveGrantedLooseTag(itTag);
+                RemoveGrantedLooseTag(tag);
             }
         }
-        
+
         public void RemoveGrantedLooseTag(MKTag _tag)
         {
-            looseGrantedTags.Remove(_tag);
+            grantedTags.RemoveTag(_tag);
         }
 
-        public List<MKTag> GetGrantedTags()
+        public IMKTagCollection GetGrantedTags()
         {
-            List<MKTag> tagList = new();
-            tagList.AddRange(looseGrantedTags);
-            foreach (MKAbility ability in IterateAbilities())
-            {
-                if (ability.active)
-                {
-                    tagList.AddRange(ability.grantedTags);
-                }
-            }
-            foreach (MKEffect effect in effectsByTag.Values)
-            {
-                tagList.AddRange(effect.grantedTags);
-            }
-
-            return tagList;
+            return grantedTags;
         }
 
         public bool HasGrantedTag(MKTag _tag)
         {
-            foreach (MKTag grantedTag in GetGrantedTags())
-            {
-                if (grantedTag == _tag)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return grantedTags.HasTag(_tag);
         }
 
-        public bool HasAnyGrantedTags(List<MKTag> _tagList)
+        public bool HasAnyGrantedTags(IEnumerable<MKTag> _tags)
         {
-            foreach (MKTag grantedTag in GetGrantedTags())
-            {
-                if (_tagList.Contains(grantedTag))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return grantedTags.HasAny(_tags);
         }
 
-        public bool HasAllGrantedTags(List<MKTag> _tagList)
+        public bool HasAllGrantedTags(IEnumerable<MKTag> _tags)
         {
-            foreach (MKTag tag in _tagList)
-            {
-                if (!HasGrantedTag(tag))
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return grantedTags.HasAll(_tags);
         }
     }
 } // Minikit.AbilitySystem namespace

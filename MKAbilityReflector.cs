@@ -69,7 +69,7 @@ namespace Minikit.AbilitySystem.Internal
                 return abilityType;
             }
 
-            Debug.LogError($"Failed to get registered {nameof(MKAbility)} type from tag {_tag.key}");
+            Debug.LogError($"Failed to get registered {nameof(MKAbility)} type from tag {_tag.name}");
             return null;
         }
 
@@ -80,7 +80,7 @@ namespace Minikit.AbilitySystem.Internal
                 return effectType;
             }
 
-            Debug.LogError($"Failed to get registered {nameof(MKEffect)} type from tag {_tag.key}");
+            Debug.LogError($"Failed to get registered {nameof(MKEffect)} type from tag {_tag.name}");
             return null;
         }
     }
