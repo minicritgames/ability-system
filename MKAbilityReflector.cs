@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -14,43 +13,27 @@ namespace Minikit.AbilitySystem.Internal
 
         static MKAbilityReflector()
         {
-            foreach (Assembly assembly in MKReflection.GetAssembliesDependingOn(typeof(MKAbility).Assembly))
+            foreach (Type type in MKReflection.GetConcreteSubclassesOf<MKAbility>())
             {
-                foreach (Type type in assembly.GetTypes())
+                if (type.GetField(MKAbility.__typeTagFieldName)?.GetValue(null) is MKTag abilityTypeTag)
                 {
-                    if (type.IsSubclassOf(typeof(MKAbility))
-                        && !type.IsAbstract) // Ignore abstract ability classes since we don't want to register them
-                    {
-                        FieldInfo tagFieldInfo = type.GetField(MKAbility.__typeTagFieldName);
-                        MKTag abilityTypeTag = (MKTag)tagFieldInfo.GetValue(null);
-                        if (abilityTypeTag != null)
-                        {
-                            registeredAbilities.Add(abilityTypeTag, type);
-                        }
-                        else
-                        {
-                            Debug.LogError($"Failed to register {nameof(MKAbility)} because field {MKAbility.__typeTagFieldName} wasn't overridden");
-                        }
-                        
-                        continue;
-                    }
+                    registeredAbilities.Add(abilityTypeTag, type);
+                }
+                else
+                {
+                    Debug.LogError($"Failed to register {nameof(MKAbility)} because field {MKAbility.__typeTagFieldName} wasn't overridden");
+                }
+            }
 
-                    if (type.IsSubclassOf(typeof(MKEffect))
-                        && !type.IsAbstract)
-                    {
-                        FieldInfo tagFieldInfo = type.GetField(MKEffect.__typeTagFieldName);
-                        MKTag abilityTypeTag = (MKTag)tagFieldInfo.GetValue(null);
-                        if (abilityTypeTag != null)
-                        {
-                            registeredEffects.Add(abilityTypeTag, type);
-                        }
-                        else
-                        {
-                            Debug.LogError($"Failed to register {nameof(MKEffect)} because field {MKEffect.__typeTagFieldName} wasn't overridden");
-                        }
-                        
-                        continue;
-                    }
+            foreach (Type type in MKReflection.GetConcreteSubclassesOf<MKEffect>())
+            {
+                if (type.GetField(MKEffect.__typeTagFieldName)?.GetValue(null) is MKTag effectTypeTag)
+                {
+                    registeredEffects.Add(effectTypeTag, type);
+                }
+                else
+                {
+                    Debug.LogError($"Failed to register {nameof(MKEffect)} because field {MKEffect.__typeTagFieldName} wasn't overridden");
                 }
             }
         }
