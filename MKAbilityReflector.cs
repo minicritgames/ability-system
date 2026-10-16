@@ -56,6 +56,11 @@ namespace Minikit.AbilitySystem.Internal
             return null;
         }
 
+        public static bool TryGetRegisteredEffectType(MKTag _tag, out Type _effectType)
+        {
+            return registeredEffects.TryGetValue(_tag, out _effectType);
+        }
+
         public static Type GetRegisteredEffectType(MKTag _tag)
         {
             if (registeredEffects.TryGetValue(_tag, out Type effectType))

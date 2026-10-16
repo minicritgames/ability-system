@@ -5,6 +5,12 @@ using Minikit.AbilitySystem.Internal;
 
 namespace Minikit.AbilitySystem
 {
+    public enum MKEffectDurationPolicy
+    {
+        Duration,
+        Infinite
+    }
+
     public abstract class MKEffect
     {
         // ----- INTERNAL -----
@@ -20,6 +26,7 @@ namespace Minikit.AbilitySystem
         /// <summary> Tags that are granted to the owning MKAbilityComponent while this effect is applied. </summary>
         public MKTagContainer grantedTags { get; } = new();
         public int maxStacks { get; protected set; } = 1; // -1 for infinite
+        public MKEffectDurationPolicy durationPolicy { get; protected set; } = MKEffectDurationPolicy.Duration;
         protected float duration = 0f;
         // ----- END SETTINGS -----
 
@@ -29,6 +36,7 @@ namespace Minikit.AbilitySystem
 
         protected MKAbilityComponent abilityComponent;
         protected float timeOfApplied = 0f;
+        private List<MKEffectModifier> modifiers = new();
         // ----- END INSTANCE -----
 
 
@@ -48,6 +56,11 @@ namespace Minikit.AbilitySystem
             context = _context;
             timeOfApplied = Time.time;
 
+            foreach (MKEffectModifier modifier in modifiers)
+            {
+                ApplyModifier(modifier);
+            }
+
             OnAdded();
         }
 
@@ -59,7 +72,8 @@ namespace Minikit.AbilitySystem
         {
             OnActiveTick(_deltaTime);
 
-            if (GetDurationRemaining() < 0f)
+            if (durationPolicy == MKEffectDurationPolicy.Duration
+                && GetDurationRemaining() < 0f)
             {
                 abilityComponent.RemoveEffect(typeTag);
             }
@@ -71,6 +85,13 @@ namespace Minikit.AbilitySystem
 
         public void Removed()
         {
+            foreach (MKEffectModifier modifier in modifiers)
+            {
+                modifier.attribute?.RemoveModifier(modifier.modifier);
+                modifier.attribute = null;
+                modifier.modifier = null;
+            }
+
             OnRemoved();
         }
 
@@ -87,6 +108,7 @@ namespace Minikit.AbilitySystem
 
             int oldStacks = stacks;
             stacks = Mathf.Clamp(stacks + _stacks, 0, maxStacks == -1 ? int.MaxValue : maxStacks);
+            RefreshStackedModifiers(oldStacks);
 
             return stacks - oldStacks;
         }
@@ -100,6 +122,7 @@ namespace Minikit.AbilitySystem
 
             int oldStacks = stacks;
             stacks = Mathf.Clamp(stacks - _stacks, 0, maxStacks == -1 ? int.MaxValue : maxStacks);
+            RefreshStackedModifiers(oldStacks);
 
             return oldStacks - stacks;
         }
@@ -111,12 +134,66 @@ namespace Minikit.AbilitySystem
 
         public float GetDurationRemaining()
         {
+            if (durationPolicy == MKEffectDurationPolicy.Infinite)
+            {
+                return float.PositiveInfinity;
+            }
+
             return GetDuration() - (Time.time - timeOfApplied);
         }
 
         public void SetDurationRemaining(float _remaining)
         {
             timeOfApplied = Time.time - (GetDuration() - _remaining);
+        }
+
+        /// <summary> Modifies an attribute on the owning component while this effect is applied. Attributes the owner doesn't have are skipped. </summary>
+        public MKEffectModifier AddModifier(MKTag _attributeTag, MKModifierOperation _operation, float _magnitude, bool _scaleWithStacks = false)
+        {
+            MKEffectModifier modifier = new(_attributeTag, _operation, _magnitude, _scaleWithStacks);
+            modifiers.Add(modifier);
+
+            if (abilityComponent)
+            {
+                ApplyModifier(modifier);
+            }
+
+            return modifier;
+        }
+
+        public IReadOnlyList<MKEffectModifier> GetModifiers()
+        {
+            return modifiers;
+        }
+
+        private void ApplyModifier(MKEffectModifier _modifier)
+        {
+            if (_modifier.modifier != null
+                || abilityComponent.GetAggregateAttribute(_modifier.attributeTag) is not MKAggregateAttribute attribute)
+            {
+                return;
+            }
+
+            _modifier.attribute = attribute;
+            _modifier.modifier = new MKModifier(typeTag, _modifier.operation, _modifier.GetValue(stacks));
+            attribute.ApplyModifier(_modifier.modifier);
+        }
+
+        private void RefreshStackedModifiers(int _oldStacks)
+        {
+            if (stacks == _oldStacks)
+            {
+                return;
+            }
+
+            foreach (MKEffectModifier modifier in modifiers)
+            {
+                if (modifier.scaleWithStacks
+                    && modifier.attribute != null)
+                {
+                    modifier.attribute.SetModifierValue(modifier.modifier, modifier.GetValue(stacks));
+                }
+            }
         }
 
 
