@@ -146,10 +146,6 @@ namespace Minikit.AbilitySystem
             {
                 if (ability.typeTag == _tag)
                 {
-                    if (ability.active)
-                    {
-                        ability.Cancel();
-                    }
                     return RemoveAbility(ability);
                 }
             }
@@ -168,10 +164,6 @@ namespace Minikit.AbilitySystem
             {
                 if (ability == _ability)
                 {
-                    if (ability.active)
-                    {
-                        ability.Cancel();
-                    }
                     grantedAbilities.Remove(ability);
                     ability.Removed(this);
                     OnRemovedAbility(ability);
