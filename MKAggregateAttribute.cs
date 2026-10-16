@@ -75,7 +75,8 @@ namespace Minikit.AbilitySystem
             float oldCurrentValue = currentValue;
             float newCurrentValueBase = baseValue;
             float newCurrentValueMultiplier = 1f;
-            Stack<float> newCurrentValueOverride = new();
+            bool hasOverride = false;
+            float overrideValue = 0f;
 
             foreach (MKModifier modifier in modifiers.Values)
             {
@@ -88,14 +89,15 @@ namespace Minikit.AbilitySystem
                         newCurrentValueMultiplier *= modifier.value;
                         break;
                     case MKModifierOperation.Override:
-                        newCurrentValueOverride.Push(modifier.value);
+                        hasOverride = true;
+                        overrideValue = modifier.value;
                         break;
                 }
             }
 
-            if (newCurrentValueOverride.Count > 0)
+            if (hasOverride)
             {
-                currentValue = newCurrentValueOverride.Pop();
+                currentValue = overrideValue;
             }
             else
             {

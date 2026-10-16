@@ -1,10 +1,9 @@
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Minikit.AbilitySystem
 {
-    public class MKAbilityComponent : MonoBehaviour 
+    public class MKAbilityComponent : MonoBehaviour
     {
         /// <summary> Every tag currently granted by loose grants, active abilities and applied effects, reference counted per source </summary>
         public MKTagCountContainer grantedTags { get; } = new();
@@ -13,6 +12,8 @@ namespace Minikit.AbilitySystem
         private Dictionary<MKTag, MKEffect> effectsByTag = new();
         private Dictionary<MKTag, MKAggregateAttribute> aggregateAttributesByTag = new();
         private Dictionary<MKTag, MKFixedAttribute> fixedAttributesByTag = new();
+        private Stack<List<MKAbility>> abilityBufferPool = new();
+        private List<MKEffect> effectBuffer = new();
 
 
         protected virtual void Awake()
@@ -25,14 +26,31 @@ namespace Minikit.AbilitySystem
 
         protected virtual void Update()
         {
-            foreach (MKAbility ability in IterateAbilities().ToArray())
+            float deltaTime = Time.deltaTime;
+
+            if (grantedAbilities.Count > 0)
             {
-                ability.Tick(Time.deltaTime);
+                List<MKAbility> buffer = RentAbilityBuffer();
+                foreach (MKAbility ability in buffer)
+                {
+                    ability.Tick(deltaTime);
+                }
+                ReturnAbilityBuffer(buffer);
             }
 
-            foreach (MKEffect effect in effectsByTag.Values.ToArray())
+            if (effectsByTag.Count > 0)
             {
-                effect.Tick(Time.deltaTime);
+                effectBuffer.AddRange(effectsByTag.Values);
+                foreach (MKEffect effect in effectBuffer)
+                {
+                    // An earlier tick may have removed it
+                    if (effectsByTag.TryGetValue(effect.typeTag, out MKEffect current)
+                        && current == effect)
+                    {
+                        effect.Tick(deltaTime);
+                    }
+                }
+                effectBuffer.Clear();
             }
         }
 
@@ -142,37 +160,21 @@ namespace Minikit.AbilitySystem
 
         public bool RemoveAbility(MKTag _tag)
         {
-            foreach (MKAbility ability in IterateAbilities().ToArray())
-            {
-                if (ability.typeTag == _tag)
-                {
-                    return RemoveAbility(ability);
-                }
-            }
-
-            return false;
+            return GetAbility(_tag) is MKAbility ability
+                && RemoveAbility(ability);
         }
 
         public bool RemoveAbility(MKAbility _ability)
         {
-            if (!IterateAbilities().Contains(_ability))
+            if (!grantedAbilities.Remove(_ability))
             {
                 return false;
             }
 
-            foreach (MKAbility ability in IterateAbilities().ToArray())
-            {
-                if (ability == _ability)
-                {
-                    grantedAbilities.Remove(ability);
-                    ability.Removed(this);
-                    OnRemovedAbility(ability);
+            _ability.Removed(this);
+            OnRemovedAbility(_ability);
 
-                    return true;
-                }
-            }
-
-            return false;
+            return true;
         }
 
         protected virtual void OnRemovedAbility(MKAbility _ability)
@@ -209,7 +211,7 @@ namespace Minikit.AbilitySystem
 
         public bool ActivateAbility(MKTag _tag, params object[] _params)
         {
-            foreach (MKAbility ability in IterateAbilities())
+            foreach (MKAbility ability in grantedAbilities)
             {
                 if (ability.typeTag == _tag)
                 {
@@ -226,29 +228,19 @@ namespace Minikit.AbilitySystem
 
         public bool ActivateAbility(MKAbility _ability, params object[] _params)
         {
-            if (!IterateAbilities().Contains(_ability))
+            if (!grantedAbilities.Contains(_ability)
+                || !_ability.CanActivate())
             {
                 return false;
             }
 
-            foreach (MKAbility ability in IterateAbilities())
-            {
-                if (ability == _ability)
-                {
-                    if (ability.CanActivate())
-                    {
-                        ability.Activate(_params);
-                        return true;
-                    }
-                }
-            }
-
-            return false;
+            _ability.Activate(_params);
+            return true;
         }
 
         public bool CancelAbility(MKTag _tag)
         {
-            foreach (MKAbility ability in IterateAbilities())
+            foreach (MKAbility ability in grantedAbilities)
             {
                 if (ability.typeTag == _tag
                     && ability.active)
@@ -263,22 +255,14 @@ namespace Minikit.AbilitySystem
 
         public bool CancelAbility(MKAbility _ability)
         {
-            if (!IterateAbilities().Contains(_ability))
+            if (!_ability.active
+                || !grantedAbilities.Contains(_ability))
             {
                 return false;
             }
 
-            foreach (MKAbility ability in IterateAbilities())
-            {
-                if (ability == _ability
-                    && ability.active)
-                {
-                    ability.Cancel();
-                    return true;
-                }
-            }
-
-            return false;
+            _ability.Cancel();
+            return true;
         }
 
         public bool CancelAbilities(IEnumerable<MKTag> _tagList)
@@ -316,7 +300,7 @@ namespace Minikit.AbilitySystem
 
         public bool HasAbility(MKTag _tag)
         {
-            return grantedAbilities.FirstOrDefault(a => a.typeTag == _tag) != null;
+            return GetAbility(_tag) != null;
         }
 
         public bool HasAbility(MKAbility _ability)
@@ -326,13 +310,21 @@ namespace Minikit.AbilitySystem
 
         public MKAbility GetAbility(MKTag _tag)
         {
-            return grantedAbilities.FirstOrDefault(a => a.typeTag == _tag);
+            foreach (MKAbility ability in grantedAbilities)
+            {
+                if (ability.typeTag == _tag)
+                {
+                    return ability;
+                }
+            }
+
+            return null;
         }
 
         public List<MKTag> GetAllActiveAbilities()
         {
             List<MKTag> tagList = new();
-            foreach (MKAbility ability in IterateAbilities())
+            foreach (MKAbility ability in grantedAbilities)
             {
                 if (ability.active)
                 {
@@ -352,7 +344,7 @@ namespace Minikit.AbilitySystem
                 return abilities;
             }
 
-            foreach (MKAbility ability in IterateAbilities())
+            foreach (MKAbility ability in grantedAbilities)
             {
                 if (ability.active
                     && ability.typeTag.MatchesAny(_tags))
@@ -362,6 +354,26 @@ namespace Minikit.AbilitySystem
             }
 
             return abilities;
+        }
+
+        public void CancelActiveAbilitiesWithTags(MKTagContainer _tags)
+        {
+            if (_tags == null
+                || _tags.isEmpty)
+            {
+                return;
+            }
+
+            List<MKAbility> buffer = RentAbilityBuffer();
+            foreach (MKAbility ability in buffer)
+            {
+                if (ability.active
+                    && MatchesAny(ability.typeTag, _tags))
+                {
+                    ability.Cancel();
+                }
+            }
+            ReturnAbilityBuffer(buffer);
         }
 
         public void AddGrantedLooseTags(IEnumerable<MKTag> _tags)
@@ -377,14 +389,16 @@ namespace Minikit.AbilitySystem
         {
             grantedTags.AddTag(_tag);
 
-            foreach (MKAbility ability in IterateAbilities().ToArray())
+            List<MKAbility> buffer = RentAbilityBuffer();
+            foreach (MKAbility ability in buffer)
             {
                 if (ability.active
-                    && _tag.MatchesAny(ability.cancelledByGrantedLooseTags))
+                    && MatchesAny(_tag, ability.cancelledByGrantedLooseTags))
                 {
                     ability.Cancel();
                 }
             }
+            ReturnAbilityBuffer(buffer);
         }
 
         public void RemoveGrantedLooseTags(IEnumerable<MKTag> _tags)
@@ -418,6 +432,63 @@ namespace Minikit.AbilitySystem
         public bool HasAllGrantedTags(IEnumerable<MKTag> _tags)
         {
             return grantedTags.HasAll(_tags);
+        }
+
+        // Indexed so the per-activation checks don't box an enumerator
+        public bool HasAnyGrantedTags(MKTagContainer _tags)
+        {
+            IReadOnlyList<MKTag> tags = _tags.GetTags();
+            for (int i = 0; i < tags.Count; i++)
+            {
+                if (grantedTags.HasTag(tags[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool HasAllGrantedTags(MKTagContainer _tags)
+        {
+            IReadOnlyList<MKTag> tags = _tags.GetTags();
+            for (int i = 0; i < tags.Count; i++)
+            {
+                if (!grantedTags.HasTag(tags[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool MatchesAny(MKTag _tag, MKTagContainer _tags)
+        {
+            IReadOnlyList<MKTag> tags = _tags.GetTags();
+            for (int i = 0; i < tags.Count; i++)
+            {
+                if (_tag.MatchesTag(tags[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Pooled because cancels can re-enter (a cancelled ability granting a loose tag)
+        private List<MKAbility> RentAbilityBuffer()
+        {
+            List<MKAbility> buffer = abilityBufferPool.Count > 0 ? abilityBufferPool.Pop() : new();
+            buffer.AddRange(grantedAbilities);
+            return buffer;
+        }
+
+        private void ReturnAbilityBuffer(List<MKAbility> _buffer)
+        {
+            _buffer.Clear();
+            abilityBufferPool.Push(_buffer);
         }
     }
 } // Minikit.AbilitySystem namespace

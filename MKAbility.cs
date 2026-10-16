@@ -151,11 +151,7 @@ namespace Minikit.AbilitySystem
             active = true;
             abilityComponent.grantedTags.AddTags(grantedTags);
 
-            List<MKAbility> cancelledAbilities = abilityComponent.GetAllActiveAbilitiesWithTags(cancelAbilityTags);
-            if (cancelledAbilities.Count > 0)
-            {
-                abilityComponent.CancelAbilities(cancelledAbilities);
-            }
+            abilityComponent.CancelActiveAbilitiesWithTags(cancelAbilityTags);
 
             OnActivate();
 
