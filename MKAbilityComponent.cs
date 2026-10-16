@@ -150,10 +150,7 @@ namespace Minikit.AbilitySystem
                     {
                         ability.Cancel();
                     }
-                    grantedAbilities.Remove(ability);
-                    OnRemovedAbility(ability);
-
-                    return true;
+                    return RemoveAbility(ability);
                 }
             }
 
@@ -176,6 +173,7 @@ namespace Minikit.AbilitySystem
                         ability.Cancel();
                     }
                     grantedAbilities.Remove(ability);
+                    ability.Removed(this);
                     OnRemovedAbility(ability);
 
                     return true;
