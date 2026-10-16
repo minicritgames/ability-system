@@ -71,6 +71,7 @@ namespace Minikit.AbilitySystem
 
         public void Removed()
         {
+            OnRemoved();
         }
 
         protected virtual void OnRemoved()
