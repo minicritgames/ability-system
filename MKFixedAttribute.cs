@@ -7,8 +7,10 @@ namespace Minikit.AbilitySystem
     {
         /// <summary> Only clamps the value down when the max drops below it </summary>
         Clamp,
-        /// <summary> A raised max adds the increase to the value. An empty (zero) value stays empty. </summary>
+        /// <summary> A raised max adds the increase to the value </summary>
         FillIncrease,
+        /// <summary> Like FillIncrease, but an empty (zero) value stays empty </summary>
+        FillIncreaseUnlessEmpty,
         /// <summary> The value keeps its fraction of the max </summary>
         KeepFraction
     }
@@ -107,8 +109,11 @@ namespace Minikit.AbilitySystem
             switch (maxChangePolicy)
             {
                 case MKMaxChangePolicy.FillIncrease:
+                case MKMaxChangePolicy.FillIncreaseUnlessEmpty:
+                    bool fills = maxChangePolicy == MKMaxChangePolicy.FillIncrease
+                        || value > 0f;
                     if (_newMax > _oldMax
-                        && value > 0f)
+                        && fills)
                     {
                         target = value + (_newMax - _oldMax);
                     }
