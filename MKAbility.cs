@@ -233,6 +233,28 @@ namespace Minikit.AbilitySystem
             }
         }
 
+        public void SetCharges(int _charges)
+        {
+            SetCurrentCharges(_charges);
+        }
+
+        public int GrantCharges(int _count)
+        {
+            if (maxCharges <= 1
+                || _count <= 0)
+            {
+                return 0;
+            }
+
+            int granted = Mathf.Min(_count, maxCharges - currentCharges);
+            if (granted > 0)
+            {
+                SetCurrentCharges(currentCharges + granted);
+            }
+
+            return granted;
+        }
+
         public void CopyTimingFrom(MKAbility _source)
         {
             if (!abilityComponent
