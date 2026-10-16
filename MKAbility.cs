@@ -294,10 +294,10 @@ namespace Minikit.AbilitySystem
 
         public void Removed(MKAbilityComponent _abilityComponent)
         {
-            abilityComponent = null;
-
             Cancel();
             OnRemoved();
+
+            abilityComponent = null;
         }
 
         protected virtual void OnRemoved()
