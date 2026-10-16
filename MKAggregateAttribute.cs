@@ -14,7 +14,7 @@ namespace Minikit.AbilitySystem
         public float baseValue { get; private set; }
         public float currentValue { get; private set; }
 
-        private Dictionary<MKTag, MKModifier> modifiers = new();
+        private List<MKModifier> modifiers = new();
 
 
         public MKAggregateAttribute(MKTag _tag, float _value)
@@ -40,12 +40,13 @@ namespace Minikit.AbilitySystem
 
         public bool ApplyModifier(MKModifier _modifier)
         {
-            if (!modifiers.TryAdd(_modifier.tag, _modifier))
+            if (_modifier == null
+                || modifiers.Contains(_modifier))
             {
-                // This modifier has already been applied
                 return false;
             }
 
+            modifiers.Add(_modifier);
             UpdateCurrentValue();
 
             return true;
@@ -53,21 +54,56 @@ namespace Minikit.AbilitySystem
 
         public bool RemoveModifier(MKModifier _modifier)
         {
-            return RemoveModifierByTag(_modifier.tag);
-        }
-
-        public bool RemoveModifierByTag(MKTag _tag)
-        {
-            if (!modifiers.ContainsKey(_tag))
+            if (!modifiers.Remove(_modifier))
             {
-                // There is no modifier with this tag
                 return false;
             }
 
-            modifiers.Remove(_tag);
             UpdateCurrentValue();
 
             return true;
+        }
+
+        /// <summary> Removes every modifier carrying this tag </summary>
+        public bool RemoveModifierByTag(MKTag _tag)
+        {
+            bool removed = false;
+            for (int i = modifiers.Count - 1; i >= 0; i--)
+            {
+                if (modifiers[i].tag == _tag)
+                {
+                    modifiers.RemoveAt(i);
+                    removed = true;
+                }
+            }
+
+            if (!removed)
+            {
+                return false;
+            }
+
+            UpdateCurrentValue();
+
+            return true;
+        }
+
+        public bool HasModifier(MKModifier _modifier)
+        {
+            return modifiers.Contains(_modifier);
+        }
+
+        public void SetModifierValue(MKModifier _modifier, float _value)
+        {
+            if (_modifier.value == _value)
+            {
+                return;
+            }
+
+            _modifier.value = _value;
+            if (modifiers.Contains(_modifier))
+            {
+                UpdateCurrentValue();
+            }
         }
 
         private void UpdateCurrentValue()
@@ -78,7 +114,8 @@ namespace Minikit.AbilitySystem
             bool hasOverride = false;
             float overrideValue = 0f;
 
-            foreach (MKModifier modifier in modifiers.Values)
+            // Overrides are applied in order, so the most recently applied one wins
+            foreach (MKModifier modifier in modifiers)
             {
                 switch (modifier.operation)
                 {
@@ -104,7 +141,10 @@ namespace Minikit.AbilitySystem
                 currentValue = newCurrentValueBase * newCurrentValueMultiplier;
             }
 
-            OnCurrentValueChanged.Invoke(oldCurrentValue, currentValue);
+            if (currentValue != oldCurrentValue)
+            {
+                OnCurrentValueChanged.Invoke(oldCurrentValue, currentValue);
+            }
         }
     }
 } // Minikit.AbilitySystem namespace

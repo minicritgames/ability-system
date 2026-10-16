@@ -3,6 +3,16 @@ using UnityEngine.Events;
 
 namespace Minikit.AbilitySystem
 {
+    public enum MKMaxChangePolicy
+    {
+        /// <summary> Only clamps the value down when the max drops below it </summary>
+        Clamp,
+        /// <summary> A raised max adds the increase to the value. An empty (zero) value stays empty. </summary>
+        FillIncrease,
+        /// <summary> The value keeps its fraction of the max </summary>
+        KeepFraction
+    }
+
     /// <summary> Fixed attributes cannot undo any modifiers that are applied. Best use cases for fixed attributes
     /// are values that have their base changed often. </summary>
     public class MKFixedAttribute
@@ -11,6 +21,8 @@ namespace Minikit.AbilitySystem
 
         public MKTag tag { get; private set; }
         public float value { get; private set; }
+        public MKAggregateAttribute maxAttribute { get; private set; }
+        public MKMaxChangePolicy maxChangePolicy { get; private set; }
 
 
         public MKFixedAttribute(MKTag _tag, float _value)
@@ -20,9 +32,33 @@ namespace Minikit.AbilitySystem
         }
 
 
+        /// <summary> Bounds this value by a max attribute and decides what happens to it when the max changes </summary>
+        public void SetMax(MKAggregateAttribute _maxAttribute, MKMaxChangePolicy _policy = MKMaxChangePolicy.Clamp)
+        {
+            maxAttribute?.OnCurrentValueChanged.RemoveListener(AggregateAttribute_OnCurrentValueChanged);
+
+            maxAttribute = _maxAttribute;
+            maxChangePolicy = _policy;
+
+            if (maxAttribute != null)
+            {
+                maxAttribute.OnCurrentValueChanged.AddListener(AggregateAttribute_OnCurrentValueChanged);
+
+                if (value > maxAttribute.currentValue)
+                {
+                    SetValue(maxAttribute.currentValue);
+                }
+            }
+        }
+
         /// <returns> The value after being altered </returns>
         public float AlterValue(float _delta, float _clampMin = float.MinValue, float _clampMax = float.MaxValue)
         {
+            if (maxAttribute != null)
+            {
+                _clampMax = Mathf.Min(_clampMax, maxAttribute.currentValue);
+            }
+
             float oldValue = value;
             value = Mathf.Clamp(value + _delta, _clampMin, _clampMax);
             if (value != oldValue)
@@ -63,6 +99,33 @@ namespace Minikit.AbilitySystem
 
             OnValueChanged.Invoke(oldValue, value);
             return true;
+        }
+
+        private void AggregateAttribute_OnCurrentValueChanged(float _oldMax, float _newMax)
+        {
+            float target = value;
+            switch (maxChangePolicy)
+            {
+                case MKMaxChangePolicy.FillIncrease:
+                    if (_newMax > _oldMax
+                        && value > 0f)
+                    {
+                        target = value + (_newMax - _oldMax);
+                    }
+                    break;
+                case MKMaxChangePolicy.KeepFraction:
+                    if (_oldMax > 0f)
+                    {
+                        target = value * (_newMax / _oldMax);
+                    }
+                    break;
+            }
+
+            target = Mathf.Min(target, _newMax);
+            if (target != value)
+            {
+                SetValue(target);
+            }
         }
     }
 } // Minikit.AbilitySystem namespace
