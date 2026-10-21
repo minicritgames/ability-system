@@ -33,6 +33,7 @@ namespace Minikit.AbilitySystem
         public MKTag cooldownEffectTag { get; protected set; } = null;
         public int maxCharges { get; protected set; } = 1;
         public MKTag rechargeEffectTag { get; protected set; } = null;
+        public virtual bool tracksCharges => maxCharges > 1;
         // ----- END SETTINGS -----
 
         // ----- INSTANCE -----
@@ -223,7 +224,7 @@ namespace Minikit.AbilitySystem
 
         protected void SpendCharge()
         {
-            if (maxCharges > 1)
+            if (tracksCharges)
             {
                 SetCurrentCharges(currentCharges - 1);
             }
@@ -236,7 +237,7 @@ namespace Minikit.AbilitySystem
 
         public int GrantCharges(int _count)
         {
-            if (maxCharges <= 1
+            if (!tracksCharges
                 || _count <= 0)
             {
                 return 0;
