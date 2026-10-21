@@ -179,6 +179,30 @@ namespace Minikit.AbilitySystem
             attribute.ApplyModifier(_modifier.modifier);
         }
 
+        internal void AttributeAdded(MKAggregateAttribute _attribute)
+        {
+            foreach (MKEffectModifier modifier in modifiers)
+            {
+                if (modifier.attributeTag == _attribute.tag)
+                {
+                    ApplyModifier(modifier);
+                }
+            }
+        }
+
+        internal void AttributeRemoved(MKAggregateAttribute _attribute)
+        {
+            foreach (MKEffectModifier modifier in modifiers)
+            {
+                if (modifier.attribute == _attribute)
+                {
+                    _attribute.RemoveModifier(modifier.modifier);
+                    modifier.attribute = null;
+                    modifier.modifier = null;
+                }
+            }
+        }
+
         private void RefreshStackedModifiers(int _oldStacks)
         {
             if (stacks == _oldStacks)

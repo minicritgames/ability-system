@@ -57,7 +57,17 @@ namespace Minikit.AbilitySystem
 
         public bool AddAttribute(MKAggregateAttribute _aggregateAttribute)
         {
-            return aggregateAttributesByTag.TryAdd(_aggregateAttribute.tag, _aggregateAttribute);
+            if (!aggregateAttributesByTag.TryAdd(_aggregateAttribute.tag, _aggregateAttribute))
+            {
+                return false;
+            }
+
+            foreach (MKEffect effect in effectsByTag.Values)
+            {
+                effect.AttributeAdded(_aggregateAttribute);
+            }
+
+            return true;
         }
 
         public bool AddAttribute(MKFixedAttribute _fixedAttribute)
@@ -67,8 +77,13 @@ namespace Minikit.AbilitySystem
 
         public bool RemoveAttribute(MKTag _tag)
         {
-            if (aggregateAttributesByTag.Remove(_tag))
+            if (aggregateAttributesByTag.Remove(_tag, out MKAggregateAttribute aggregateAttribute))
             {
+                foreach (MKEffect effect in effectsByTag.Values)
+                {
+                    effect.AttributeRemoved(aggregateAttribute);
+                }
+
                 return true;
             }
             
